@@ -19,6 +19,8 @@ class MusicService : Service() {
         const val EXTRA_MUSIC_TITLE = "music_title"
         const val PREFS_NAME = "music_prefs"
         const val PREF_LAST_URI = "last_uri"
+        const val PREF_IS_PLAYING = "is_playing"
+        const val PREF_RESUME_ON_BATTERY_OKAY = "resume_on_battery_okay"
     }
 
     override fun onCreate() {
@@ -45,6 +47,8 @@ class MusicService : Service() {
             getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 .edit()
                 .putString(PREF_LAST_URI, uri.toString())
+                .putBoolean(PREF_IS_PLAYING, true)
+                .putBoolean(PREF_RESUME_ON_BATTERY_OKAY, false)
                 .apply()
         } else if (mediaPlayer == null) {
             stopSelf()
@@ -75,6 +79,10 @@ class MusicService : Service() {
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit()
+            .putBoolean(PREF_IS_PLAYING, false)
+            .apply()
         super.onDestroy()
     }
 

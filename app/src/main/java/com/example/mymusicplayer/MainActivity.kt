@@ -42,10 +42,7 @@ class MainActivity : AppCompatActivity() {
             val toPlay = selectedAudio ?: audioList.firstOrNull()
 
             if (toPlay != null) {
-                val intent = Intent(this, MusicService::class.java)
-                intent.putExtra(MusicService.EXTRA_MUSIC_URI, toPlay.uri)
-                intent.putExtra(MusicService.EXTRA_MUSIC_TITLE, toPlay.title)
-                ContextCompat.startForegroundService(this, intent)
+                startPlayback(toPlay)
             } else {
                 Toast.makeText(this, "No audio files found on device", Toast.LENGTH_SHORT).show()
             }
@@ -57,8 +54,17 @@ class MainActivity : AppCompatActivity() {
 
         listView.setOnItemClickListener { _, _, position, _ ->
             selectedAudio = audioList[position]
-            Toast.makeText(this, "Selected: ${selectedAudio?.title}", Toast.LENGTH_SHORT).show()
+            startPlayback(selectedAudio!!)
         }
+    }
+
+    private fun startPlayback(audio: AudioModel) {
+        val intent = Intent(this, MusicService::class.java).apply {
+            putExtra(MusicService.EXTRA_MUSIC_URI, audio.uri)
+            putExtra(MusicService.EXTRA_MUSIC_TITLE, audio.title)
+        }
+        ContextCompat.startForegroundService(this, intent)
+        Toast.makeText(this, "Playing: ${audio.title}", Toast.LENGTH_SHORT).show()
     }
 
     private fun checkAndRequestPermissions() {
