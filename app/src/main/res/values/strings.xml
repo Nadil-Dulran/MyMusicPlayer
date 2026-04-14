@@ -2,4 +2,5 @@
     <string name="app_name">My Music Player</string>
     <string name="Start_Music">Start Music</string>
     <string name="Stop_Music">Stop Music</string>
+    <string name="Song_List">Song List</string>
 </resources>
