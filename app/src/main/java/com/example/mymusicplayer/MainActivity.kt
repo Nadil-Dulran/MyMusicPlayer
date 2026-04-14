@@ -3,8 +3,8 @@ package com.example.mymusicplayer
 import android.Manifest
 import android.content.ContentUris
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.mymusicplayer.model.AudioModel
+import com.example.mymusicplayer.receiver.BatteryReceiver
 import com.example.mymusicplayer.service.MusicService
 
 class MainActivity : AppCompatActivity() {
@@ -22,6 +23,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var startBtn: Button
     private lateinit var stopBtn: Button
     private var selectedAudio: AudioModel? = null
+    private val batteryReceiver = BatteryReceiver()
+    private var isBatteryReceiverRegistered = false
 
     companion object {
         private const val REQUEST_CODE_MEDIA_PERMISSION = 101
@@ -65,6 +68,39 @@ class MainActivity : AppCompatActivity() {
         }
         ContextCompat.startForegroundService(this, intent)
         Toast.makeText(this, "Playing: ${audio.title}", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        registerBatteryReceiverIfNeeded()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unregisterBatteryReceiverIfNeeded()
+    }
+
+    private fun registerBatteryReceiverIfNeeded() {
+        if (isBatteryReceiverRegistered) return
+
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_BATTERY_LOW)
+            addAction(Intent.ACTION_BATTERY_OKAY)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(batteryReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(batteryReceiver, filter)
+        }
+
+        isBatteryReceiverRegistered = true
+    }
+
+    private fun unregisterBatteryReceiverIfNeeded() {
+        if (!isBatteryReceiverRegistered) return
+        unregisterReceiver(batteryReceiver)
+        isBatteryReceiverRegistered = false
     }
 
     private fun checkAndRequestPermissions() {

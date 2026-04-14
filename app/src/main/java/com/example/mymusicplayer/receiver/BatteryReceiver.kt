@@ -14,6 +14,12 @@ class BatteryReceiver : BroadcastReceiver() {
         when (intent.action) {
 
             Intent.ACTION_BATTERY_LOW -> {
+                val prefs = context.getSharedPreferences(MusicService.PREFS_NAME, Context.MODE_PRIVATE)
+                val wasPlaying = prefs.getBoolean(MusicService.PREF_IS_PLAYING, false)
+                prefs.edit()
+                    .putBoolean(MusicService.PREF_RESUME_ON_BATTERY_OKAY, wasPlaying)
+                    .apply()
+
                 val stopIntent = Intent(context, MusicService::class.java)
                 context.stopService(stopIntent)
 
@@ -25,17 +31,19 @@ class BatteryReceiver : BroadcastReceiver() {
             Intent.ACTION_BATTERY_OKAY -> {
                 val prefs = context.getSharedPreferences(MusicService.PREFS_NAME, Context.MODE_PRIVATE)
                 val lastUri = prefs.getString(MusicService.PREF_LAST_URI, null)
+                val shouldResume = prefs.getBoolean(MusicService.PREF_RESUME_ON_BATTERY_OKAY, false)
 
-                if (!lastUri.isNullOrBlank()) {
+                if (shouldResume && !lastUri.isNullOrBlank()) {
                     val restartIntent = Intent(context, MusicService::class.java).apply {
                         putExtra(MusicService.EXTRA_MUSIC_URI, lastUri)
                         putExtra(MusicService.EXTRA_MUSIC_TITLE, "Resumed after battery recovery")
                     }
                     ContextCompat.startForegroundService(context, restartIntent)
+                    prefs.edit().putBoolean(MusicService.PREF_RESUME_ON_BATTERY_OKAY, false).apply()
                 }
 
                 Toast.makeText(context,
-                    "Battery okay - playback resumed",
+                    if (shouldResume) "Battery okay - playback resumed" else "Battery okay",
                     Toast.LENGTH_SHORT).show()
             }
         }
